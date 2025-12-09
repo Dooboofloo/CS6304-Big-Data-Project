@@ -14,9 +14,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 ### ===== HYPERPARAMETERS =====
 WINDOW = 720 # 720 hours = 30 days
-CHANNELS = [32, 32, 32]
+CHANNELS = [64, 64, 64, 64]
 DROPOUT = 0.3
-LR = 1e-3 # try 1e-3 or 3e-4
+LR = 1e-3
 
 ### ===== Data loading and preprocessing =====
 
