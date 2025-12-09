@@ -12,6 +12,12 @@ import torch.nn.functional as F
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
+### ===== HYPERPARAMETERS =====
+WINDOW = 720 # 720 hours = 30 days
+CHANNELS = [32, 32, 32]
+DROPOUT = 0.3
+LR = 1e-3 # try 1e-3 or 3e-4
+
 ### ===== Data loading and preprocessing =====
 
 # Read data into pandas dataframe
@@ -109,7 +115,7 @@ scaler_y.fit(y_all[:train_end].reshape(-1, 1))
 X_all = scaler_x.transform(X_all)
 y_all = scaler_y.transform(y_all.reshape(-1, 1)).flatten()
 
-dataset = SlidingWindowDataset(X_all, y_all, window=720)
+dataset = SlidingWindowDataset(X_all, y_all, window=WINDOW)
 
 train_set = torch.utils.data.Subset(dataset, range(0, train_end))
 val_set = torch.utils.data.Subset(dataset, range(train_end, val_end))
@@ -130,12 +136,12 @@ print("USING DEVICE:", device)
 # Set up the model, optimizer, and loss functions
 model = TCN(
     num_inputs=len(FEATURES),
-    num_channels=[64, 64, 64, 64],
+    num_channels=CHANNELS,
     kernel_size=3,
-    dropout=0.2
+    dropout=DROPOUT
 ).to(device)
 
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=LR)
 loss_fn = nn.MSELoss()
 
 
