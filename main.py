@@ -25,19 +25,16 @@ TARGET = ["nat_usage_mw"]
 # Sort chronologically (should be so already, but just to make sure)
 df = df.sort_values(["year","month","day","hour"]).reset_index(drop=True)
 
-# Normalize all features except target
-scaler_x = StandardScaler()
-scaler_y = StandardScaler()
-
-df[FEATURES] = scaler_x.fit_transform(df[FEATURES])
-df[TARGET] = scaler_y.fit_transform(df[TARGET])
+# Extract raw arrays before scaling
+X_all = df[FEATURES].values.astype(np.float32)
+y_all = df[TARGET[0]].values.astype(np.float32)
 
 
 # ===== Set up important classes ======
 class SlidingWindowDataset(Dataset):
-    def __init__(self, df, window=720): # 720 hours = 30 days
-        self.X = df[FEATURES].values.astype(np.float32)
-        self.y = df[TARGET[0]].values.astype(np.float32)
+    def __init__(self, X, y, window=720): # 720 hours = 30 days
+        self.X = X.astype(np.float32)
+        self.y = y.astype(np.float32)
         self.window = window
     
     def __len__(self):
@@ -99,11 +96,20 @@ class TCN(nn.Module):
 
 
 # ===== Training / Validation Split =====
-dataset = SlidingWindowDataset(df, window=720) # 720 hours = 30 days
+n = len(y_all) - 720
+train_end = int(0.8 * n)
+val_end = int(0.9 * n)
 
-n = len(dataset)
-train_end = int(0.8 * n) # 80% Training data
-val_end = int(0.9 * n) # 10% Validation data (leaves 10% test data)
+scaler_x = StandardScaler()
+scaler_y = StandardScaler()
+
+scaler_x.fit(X_all[:train_end])
+scaler_y.fit(y_all[:train_end].reshape(-1, 1))
+
+X_all = scaler_x.transform(X_all)
+y_all = scaler_y.transform(y_all.reshape(-1, 1)).flatten()
+
+dataset = SlidingWindowDataset(X_all, y_all, window=720)
 
 train_set = torch.utils.data.Subset(dataset, range(0, train_end))
 val_set = torch.utils.data.Subset(dataset, range(train_end, val_end))
@@ -113,7 +119,6 @@ test_set = torch.utils.data.Subset(dataset, range(val_end, n))
 train_loader = DataLoader(train_set, batch_size=64, shuffle=True, num_workers=4, pin_memory=True)
 val_loader = DataLoader(val_set, batch_size=64, num_workers=4, pin_memory=True)
 test_loader = DataLoader(test_set, batch_size=64, num_workers=4, pin_memory=True)
-
 
 ### ===== TRAINING LOOP =====
 # This is the important stuff!
