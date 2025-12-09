@@ -1,4 +1,5 @@
 import os
+import copy
 
 import pandas as pd
 import numpy as np
@@ -133,11 +134,19 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 loss_fn = nn.MSELoss()
 
 
-# Train the model
-loss_history = []
+# Train the model with early stopping
+epochs = 50
+patience = 6
+best_val_loss = float("inf")
+best_model_state = None
+epochs_no_improve = 0
+best_epoch = 0
 
-epochs = 40
+loss_history = []
+val_loss_history = []
+
 for epoch in range(epochs):
+    # ===== Training =====
     model.train()
     total_loss = 0.0
 
@@ -147,16 +156,49 @@ for epoch in range(epochs):
         optimizer.zero_grad()
         pred = model(X)
         loss = loss_fn(pred, y)
-        
         loss.backward()
         optimizer.step()
 
         total_loss += loss.item()
     
-    avg_loss = total_loss / len(train_loader)
-    loss_history.append(avg_loss)
+    avg_train_loss = total_loss / len(train_loader)
+    loss_history.append(avg_train_loss)
 
-    print(f"Epoch {epoch+1}/{epochs} | Avg Loss: {avg_loss:.6f}")
+    # ===== Validation =====
+    model.eval()
+    val_loss = 0.0
+
+    with torch.no_grad():
+        for X, y in val_loader:
+            X, y = X.to(device), y.to(device)
+            
+            pred = model(X)
+            loss = loss_fn(pred, y)
+            val_loss += loss.item()
+    
+    avg_val_loss = val_loss / len(val_loader)
+    val_loss_history.append(avg_val_loss)
+
+    print(f"Epoch {epoch+1}/{epochs} | Train Loss: {avg_train_loss:.6f} | Val Loss: {avg_val_loss:.6f}")
+
+    # ===== Early Stopping Check =====
+    if avg_val_loss < best_val_loss:
+        best_val_loss = avg_val_loss
+        best_model_state = copy.deepcopy(model.state_dict())
+        best_epoch = epoch + 1
+        epochs_no_improve = 0
+        print("!!! Validation improved. Saving Best Model")
+    else:
+        epochs_no_improve += 1
+
+        print(f"!!! No improvement for {epochs_no_improve} epoch(s)")
+
+        if epochs_no_improve >= patience:
+            print("!!! Early stopping triggered.")
+            break
+
+# Load back the best model state
+model.load_state_dict(best_model_state)
 
 # Save everything!
 SAVE_DIR = "tcn_outputs"
@@ -169,7 +211,7 @@ SCALER_X_PATH = os.path.join(SAVE_DIR, "scaler_x.npy")
 SCALER_Y_PATH = os.path.join(SAVE_DIR, "scaler_y.npy")
 
 torch.save({
-    "epoch": epochs,
+    "best_epoch": best_epoch,
     "model_state": model.state_dict(),
     "optimizer_state": optimizer.state_dict()
 }, MODEL_PATH)
@@ -180,7 +222,7 @@ np.save(SCALER_Y_PATH, np.vstack([scaler_y.mean_, scaler_y.scale_]))
 print("!!! Model and scalers saved.")
 
 # Save the training loss curve to disk
-pd.DataFrame({"loss": loss_history}).to_csv(
+pd.DataFrame({"train_loss": loss_history, "val_loss": val_loss_history}).to_csv(
     "tcn_outputs/training_loss.csv", index=False
 )
 print("!!! Training loss history saved.")
@@ -227,6 +269,7 @@ rmse, mae, wape = evaluate(model, test_loader)
 print("RMSE:", rmse)
 print("MAE:", mae)
 print("WAPE:", wape)
+print("Best Epoch:", best_epoch)
 
 metrics_df = pd.DataFrame([{
     "RMSE": rmse,
