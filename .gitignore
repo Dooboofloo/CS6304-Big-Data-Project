@@ -1,2 +1,4 @@
 tcn_outputs/**
-logs/**
+*.err
+*.out
+cleanup.sh
