@@ -200,8 +200,8 @@ def evaluate(model, loader, output_csv="tcn_outputs/predictions.csv"):
             preds.extend(pred)
             trues.extend(y.numpy())
     
-    preds = scaler_y.inverse_transform(np.array(preds).reshape(-1,1))
-    trues = scaler_y.inverse_transform(np.array(trues).reshape(-1,1))
+    preds = scaler_y.inverse_transform(np.array(preds).reshape(-1,1)).flatten()
+    trues = scaler_y.inverse_transform(np.array(trues).reshape(-1,1)).flatten()
 
     # Metrics
     rmse = np.sqrt(mean_squared_error(trues, preds))
