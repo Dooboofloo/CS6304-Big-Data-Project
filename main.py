@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 ### ===== HYPERPARAMETERS =====
-WINDOW = 720 # 720 hours = 30 days
+WINDOW = 720 # 720 half-hours = 15 days
 CHANNELS = [64, 64, 64, 64]
 DROPOUT = 0.3
 LR = 1e-3
@@ -38,7 +38,7 @@ y_all = df[TARGET[0]].values.astype(np.float32)
 
 # ===== Set up important classes ======
 class SlidingWindowDataset(Dataset):
-    def __init__(self, X, y, window=720): # 720 hours = 30 days
+    def __init__(self, X, y, window=720): # 720 half-hours = 15 days
         self.X = X.astype(np.float32)
         self.y = y.astype(np.float32)
         self.window = window
