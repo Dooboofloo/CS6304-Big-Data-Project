@@ -96,3 +96,9 @@ Early stopping successfully prevented overfitting, with the best model selected 
 ### Training & Evaluation
 ```bash
 python main.py
+```
+
+## 📌 Project Status
+
+This project is **feature-complete and archived**.  
+No further development is planned, and the repository is preserved in its final state for reference and evaluation.
