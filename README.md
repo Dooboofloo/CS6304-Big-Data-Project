@@ -2,9 +2,11 @@
 
 **Developer:** Jerrett Martin
 
-This project explores **long-term electricity demand forecasting** using **Temporal Convolutional Networks (TCNs)** and large-scale time-series data.
+This project explores **long-term electricity demand forecasting** using **Temporal Convolutional Networks (TCNs)** and multi-year time-series data.
 
 The model integrates **weather, temporal, and calendar features** and demonstrates strong performance on real-world UK electricity consumption data.
+
+It was developed as a graduate project for Missouri S&T's CS 6304 — Cloud Computing and Big Data Management.
 
 ---
 
@@ -12,7 +14,7 @@ The model integrates **weather, temporal, and calendar features** and demonstrat
 
 Accurate electricity demand forecasting is essential as energy systems face increasing strain from electrification, climate variability, and emerging technologies (e.g., data centers, AI workloads).
 
-This project investigates whether **TCNs — using causal, dilated convolutions — can outperform traditional ML and recurrent models** when forecasting **long-range consumption trends**.
+This project investigates the effectiveness of **TCNs — using causal, dilated convolutions — for forecasting electricity consumption over horizons spanning months to years.**
 
 ### Key Contributions
 - Designed and implemented a **custom TCN architecture** in PyTorch
@@ -20,7 +22,7 @@ This project investigates whether **TCNs — using causal, dilated convolutions 
 - Applied **sliding-window segmentation** to reduce overfitting on long horizons
 - Used **chronological data splits** to prevent temporal leakage
 - Trained and evaluated the model on **~279,000 semi-hourly observations**
-- Achieved **sub-10% error** on long-term forecasts
+- Achieved **8.83% WAPE** on a chronologically held-out future test set
 
 ---
 
@@ -51,7 +53,7 @@ The model is a **Temporal Convolutional Network (TCN)** featuring:
 The model is trained on a merged dataset consisting of:
 
 - **UK National Electricity Consumption (2009–2024)**  
-  Hourly electricity usage in megawatts (MW)
+  Half-hourly electricity usage in megawatts (MW)
 
 - **UK Met Office Historic Weather Data**
   - Max / Min / Avg temperature
@@ -78,11 +80,10 @@ The final model was evaluated on a held-out test set of unseen future data.
 | **WAPE** | **8.83%** |
 
 These results indicate:
-- Predictions deviate **< 9% on average** from true consumption
-- Errors remain well below thresholds associated with catastrophic over/under-provisioning
-- The model generalizes effectively despite strong seasonal and economic variability
+- The model maintained **sub-10% aggregate forecast error** on chronologically held-out future data
+- The model generalized across a multi-year electricity consumption dataset with strong seasonal variation
 
-Early stopping successfully prevented overfitting, with the best model selected at epoch 2.
+Early stopping was used to select the best validation checkpoint and limit overfitting.
 
 ---
 
